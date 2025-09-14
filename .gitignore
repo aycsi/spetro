@@ -6,9 +6,12 @@ build/
 dist/
 tests/
 pytest.ini
+.pytest_cache/
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 venv/
 .env
+
+

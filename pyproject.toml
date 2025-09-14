@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "spetro"
-version = "0.0.2"
+dynamic = ["version"]
 description = "Rough volatility models with automatic differentiation."
 authors = [{name = "aycsi"}]
 license = {text = "MIT"}
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Office/Business :: Financial",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Operating System :: OS Independent",
-    ]
+]
 dependencies = [
     "numpy>=1.21.0",
     "scipy>=1.7.0",
