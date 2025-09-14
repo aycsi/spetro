@@ -185,29 +185,23 @@ class RoughHeston(RoughVolatilityModel):
         V = backend.zeros((n_paths, n_steps + 1))
         S = backend.zeros((n_paths, n_steps + 1))
         
-        if hasattr(V, 'at'):
-            V = V.at[:, 0].set(self.V0)
-            S = S.at[:, 0].set(S0)
-        else:
-            V[:, 0] = self.V0
-            S[:, 0] = S0
+        V = backend.set_item(V, (slice(None), 0), backend.array([self.V0] * n_paths))
+        S = backend.set_item(S, (slice(None), 0), backend.array([S0] * n_paths))
         
         for i in range(n_steps):
-            vol_of_vol = self.nu * (V[:, i] ** 0.5)
+            v_curr = V[:, i]
+            v_sqrt = backend.sqrt(backend.array([max(v, 1e-8) for v in v_curr.flatten()])).reshape(v_curr.shape)
             
-            dV = self.theta * dt + vol_of_vol * dZ[:, i]
+            dv = self.theta * dt + self.nu * v_sqrt * dZ[:, i]
+            v_next = v_curr + dv
+            v_next = backend.array([max(v, 0.0) for v in v_next.flatten()]).reshape(v_next.shape)
             
-            if hasattr(V, 'at'):
-                V = V.at[:, i + 1].set(backend.jnp.maximum(V[:, i] + dV, 0.0))
-            else:
-                V[:, i + 1] = backend.torch.clamp(V[:, i] + dV, min=0.0)
+            V = backend.set_item(V, (slice(None), i + 1), v_next)
             
             drift = self.r * dt
-            diffusion = backend.sqrt(V[:, i]) * dB[:, i]
+            diffusion = v_sqrt * dB[:, i]
+            s_next = S[:, i] * backend.exp(drift - 0.5 * v_curr * dt + diffusion)
             
-            if hasattr(S, 'at'):
-                S = S.at[:, i + 1].set(S[:, i] * backend.exp(drift - 0.5 * V[:, i] * dt + diffusion))
-            else:
-                S[:, i + 1] = S[:, i] * backend.exp(drift - 0.5 * V[:, i] * dt + diffusion)
+            S = backend.set_item(S, (slice(None), i + 1), s_next)
         
         return S, V
