@@ -110,28 +110,24 @@ class RoughBergomi(RoughVolatilityModel):
         n_paths, n_steps = dW.shape
         dt = t_grid[1] - t_grid[0]
         
-        g_kernel = self._riemann_liouville_kernel(backend, t_grid[1:], H)
+        g = self._riemann_liouville_kernel(backend, t_grid[1:], H)
         
-        Y = backend.zeros((n_steps, n_paths))
-        
-        for i in range(n_steps):
-            if i == 0:
-                weights = backend.array([g_kernel[0]])
-                dW_slice = dW[:, :1]
-            else:
-                weights = g_kernel[:i+1]
-                if hasattr(backend, 'jnp'):
-                    weights = weights[::-1]
-                else:
-                    weights = backend.torch.flip(weights, dims=[0])
-                dW_slice = dW[:, :i+1]
-            
-            if hasattr(backend, 'jnp'):
-                Y = Y.at[i].set(backend.jnp.dot(weights, dW_slice.T))
-            else:
-                Y[i] = backend.torch.matmul(weights.unsqueeze(0), dW_slice.T).squeeze()
-        
-        return Y
+        if hasattr(backend, 'jnp'):
+            g_rev = g[::-1]
+            y = backend.jnp.array([backend.jnp.convolve(dW[p], g_rev, mode='valid') 
+                                  for p in range(n_paths)])
+            return y.T
+        else:
+            g_rev = backend.torch.flip(g, dims=[0])
+            y = backend.zeros((n_paths, n_steps))
+            for p in range(n_paths):
+                conv = backend.torch.conv1d(
+                    dW[p:p+1].unsqueeze(0), 
+                    g_rev.unsqueeze(0).unsqueeze(0), 
+                    padding=n_steps-1
+                )
+                y[p] = conv.squeeze()[:n_steps]
+            return y.T
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
         alpha = H + 0.5
