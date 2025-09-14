@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "spetro"
-dynamic = ["version"]
+version = "0.0.5"  # <- hard-coded version
 description = "Rough volatility models with automatic differentiation."
 authors = [{name = "aycsi"}]
 license = {text = "MIT"}
