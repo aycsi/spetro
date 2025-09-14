@@ -10,5 +10,3 @@ so i built what i wanted to use..
 - nets for microsecond results
 - pathwise greeks through auto-diff
 - proper python packaging (cause why not open source this for others to use)
-
-so, to sum it up.. this really just started with me wanting decent tooling for rough vol computations, and ended up being a PyPI package.
