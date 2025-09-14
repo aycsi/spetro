@@ -1,6 +1,7 @@
 name: Publish to PyPI
 
 # Trigger workflow on GitHub Release publish
+# This should (dynamic version) give me auto pypi uploads when setting tag.. or git push towards tag and realase..
 on:
   release:
     types: [published]
