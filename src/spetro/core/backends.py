@@ -39,6 +39,10 @@ class Backend(ABC):
     @abstractmethod
     def grad(self, fn: callable) -> callable:
         pass
+    
+    @abstractmethod
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
+        pass
 
 
 class JAXBackend(Backend):
@@ -83,6 +87,9 @@ class JAXBackend(Backend):
     
     def grad(self, fn: callable) -> callable:
         return self.grad_fn(fn)
+    
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
+        return arr.at[idx].set(val)
 
 
 class TorchBackend(Backend):
@@ -146,3 +153,7 @@ class TorchBackend(Backend):
             y = fn(x_tensor)
             return self.torch.autograd.grad(y, x_tensor, create_graph=True)[0]
         return grad_fn
+    
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
+        arr[idx] = val
+        return arr
