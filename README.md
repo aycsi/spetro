@@ -8,12 +8,17 @@
 ![Beta](https://img.shields.io/badge/beta-orange?style=flat)
 ![Development Status](https://img.shields.io/badge/dev--status-beta-yellow)
 
-![schema](docs/schema-thoughts-figure-a.png)
+<details>
+<summary>Testings</summary>
+  
+![performance](docs/testings-scikit-figure-b.png)
+
+</details>
 
 <details>
-<summary></summary>
-
-![performance](docs/testings-scikit-figure-b.png)
+<summary>Architecture</summary>
+  
+![schema](docs/schema-thoughts-figure-a.png)
 
 </details>
 
