@@ -8,6 +8,7 @@
 ![Beta](https://img.shields.io/badge/beta-orange?style=flat)
 ![Development Status](https://img.shields.io/badge/dev--status-beta-yellow)
 [![api](https://img.shields.io/badge/docs-api-purple)](docs/api.md)
+[![Downloads](https://pepy.tech/badge/spetro)](https://pepy.tech/project/spetro)
 
 ### installation
 
