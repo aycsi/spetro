@@ -1,6 +1,4 @@
-# spetro
-
-### v0.0.5
+# Spetro
 
 [![PyPI](https://img.shields.io/pypi/v/spetro.svg)](https://pypi.org/project/spetro/)
 [![thoughts](https://img.shields.io/badge/docs-thoughts-blue)](docs/thoughts.md)
