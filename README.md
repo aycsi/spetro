@@ -7,6 +7,7 @@
 ![Beta](https://img.shields.io/badge/status-beta-orange)
 ![Beta](https://img.shields.io/badge/beta-orange?style=flat)
 ![Development Status](https://img.shields.io/badge/dev--status-beta-yellow)
+[![Downloads](https://pepy.tech/badge/spetro)](https://pepy.tech/project/spetro)
 
 <details>
 <summary>Testings</summary>
