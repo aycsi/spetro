@@ -71,7 +71,7 @@ class RoughBergomi(RoughVolatilityModel):
         V = backend.zeros((n_steps + 1, n_paths))
         V = backend.set_item(V, 0, self.xi)
         for i in range(n_steps):
-            vol_term = self.xi * backend.exp(self.eta * Y[i] - 0.5 * self.eta**2 * t_grid[i+1])
+            vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
             V = backend.set_item(V, i+1, vol_term)
         
         log_S = backend.zeros((n_paths, n_steps + 1))
@@ -103,7 +103,7 @@ class RoughBergomi(RoughVolatilityModel):
             g_rev = g[::-1]
             y = backend.jnp.array([backend.jnp.convolve(dW[p], g_rev, mode='valid') 
                                   for p in range(n_paths)])
-            return y.T
+            return y
         else:
             g_rev = backend.torch.flip(g, dims=[0])
             y = backend.zeros((n_paths, n_steps))
@@ -114,7 +114,7 @@ class RoughBergomi(RoughVolatilityModel):
                     padding=n_steps-1
                 )
                 y[p] = conv.squeeze()[:n_steps]
-            return y.T
+            return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
         alpha = H + 0.5
