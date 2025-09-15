@@ -3,8 +3,8 @@
 ## Engine
 
 ```python
-from spetro import Engine
-e = Engine(backend="jax", device=None, precision="float32")
+from spetro import RoughVolatilityEngine
+e = RoughVolatilityEngine(backend="jax", device=None, precision="float32")
 ```
 
 ### simulate(model, n_paths, n_steps, T, S0=100.0, key=None)
