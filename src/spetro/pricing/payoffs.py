@@ -49,17 +49,28 @@ def european_put(K: float) -> Callable[[Any], Any]:
 
 
 def asian_call(K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    
     def payoff(S: Any) -> Any:
-        if hasattr(S, 'mean'):
-            avg_price = S.mean(axis=1)
-        else:
-            avg_price = np.mean(S, axis=1)
-        
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(avg_price - K, 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(avg_price - K, min=0.0)
+            if isinstance(S, torch.Tensor):
+                avg_price = torch.mean(S, dim=1)
+                return torch.clamp(avg_price - K, min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                avg_price = jnp.mean(S, axis=1)
+                return jnp.maximum(avg_price - K, 0.0)
+        except ImportError:
+            pass
+        
+        avg_price = np.mean(S, axis=1)
+        return np.maximum(avg_price - K, 0.0)
     return payoff
 
 
