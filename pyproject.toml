@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spetro"
-version = "0.0.5"  # <- hard-coded version
+version = "0.0.6"  # re <- hard-coded version
 description = "Rough volatility models with automatic differentiation."
 authors = [{name = "aycsi"}]
 license = {text = "MIT"}
