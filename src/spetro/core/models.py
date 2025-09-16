@@ -69,19 +69,31 @@ class RoughBergomi(RoughVolatilityModel):
         Y = self._fractional_brownian_motion(backend, dW1, t_grid, self.H)
         
         V = backend.zeros((n_steps + 1, n_paths))
-        V = backend.set_item(V, 0, self.xi)
-        for i in range(n_steps):
-            vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
-            V = backend.set_item(V, i+1, vol_term)
+        if hasattr(V, 'at'):
+            V = V.at[0].set(self.xi)
+            for i in range(n_steps):
+                vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
+                V = V.at[i+1].set(vol_term)
+        else:
+            V[0] = self.xi
+            for i in range(n_steps):
+                vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
+                V[i+1] = vol_term
         
         log_S = backend.zeros((n_paths, n_steps + 1))
-        log_S = backend.set_item(log_S, (slice(None), 0), backend.array([np.log(S0)] * n_paths))
+        if hasattr(log_S, 'at'):
+            log_S = log_S.at[:, 0].set(backend.log(S0))
+        else:
+            log_S[:, 0] = backend.log(S0)
         
         for i in range(n_steps):
             vol = backend.sqrt(V[i])
             drift = (self.r - 0.5 * V[i]) * dt
             diffusion = vol * dB[:, i]
-            log_S = backend.set_item(log_S, (slice(None), i + 1), log_S[:, i] + drift + diffusion)
+            if hasattr(log_S, 'at'):
+                log_S = log_S.at[:, i + 1].set(log_S[:, i] + drift + diffusion)
+            else:
+                log_S[:, i + 1] = log_S[:, i] + drift + diffusion
         
         S = backend.exp(log_S)
         
