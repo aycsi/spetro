@@ -25,6 +25,10 @@ class Backend(ABC):
         pass
     
     @abstractmethod
+    def log(self, x: Any) -> Any:
+        pass
+    
+    @abstractmethod
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         pass
     
