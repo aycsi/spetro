@@ -26,27 +26,51 @@ def european_call(K: float) -> Callable[[Any], Any]:
 
 
 def european_put(K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    
     def payoff(S: Any) -> Any:
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(K - S[:, -1], 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(K - S[:, -1], min=0.0)
+            if isinstance(S, torch.Tensor):
+                return torch.clamp(K - S[:, -1], min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                return jnp.maximum(K - S[:, -1], 0.0)
+        except ImportError:
+            pass
+        
+        return np.maximum(K - S[:, -1], 0.0)
     return payoff
 
 
 def asian_call(K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    
     def payoff(S: Any) -> Any:
-        if hasattr(S, 'mean'):
-            avg_price = S.mean(axis=1)
-        else:
-            avg_price = np.mean(S, axis=1)
-        
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(avg_price - K, 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(avg_price - K, min=0.0)
+            if isinstance(S, torch.Tensor):
+                avg_price = torch.mean(S, dim=1)
+                return torch.clamp(avg_price - K, min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                avg_price = jnp.mean(S, axis=1)
+                return jnp.maximum(avg_price - K, 0.0)
+        except ImportError:
+            pass
+        
+        avg_price = np.mean(S, axis=1)
+        return np.maximum(avg_price - K, 0.0)
     return payoff
 
 
@@ -81,16 +105,29 @@ def barrier_call(K: float, barrier: float, barrier_type: str = "up_and_out") -> 
 
 
 def basket_call(weights: list, K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    if not weights:
+        raise ValueError("weights cannot be empty")
+    
     def payoff(S: Any) -> Any:
-        if len(S.shape) == 3:
-            basket_value = sum(w * S[i, :, -1] for i, w in enumerate(weights))
-        else:
-            basket_value = sum(w * S[:, -1] for w in weights)
-        
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(basket_value - K, 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(basket_value - K, min=0.0)
+            if isinstance(S, torch.Tensor):
+                basket_value = sum(w * S[:, -1] for w in weights)
+                return torch.clamp(basket_value - K, min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                basket_value = sum(w * S[:, -1] for w in weights)
+                return jnp.maximum(basket_value - K, 0.0)
+        except ImportError:
+            pass
+        
+        basket_value = sum(w * S[:, -1] for w in weights)
+        return np.maximum(basket_value - K, 0.0)
     
     return payoff

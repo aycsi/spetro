@@ -25,6 +25,10 @@ class Backend(ABC):
         pass
     
     @abstractmethod
+    def log(self, x: Any) -> Any:
+        pass
+    
+    @abstractmethod
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         pass
     
@@ -38,6 +42,10 @@ class Backend(ABC):
     
     @abstractmethod
     def grad(self, fn: callable) -> callable:
+        pass
+    
+    @abstractmethod
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
         pass
 
 
@@ -72,6 +80,9 @@ class JAXBackend(Backend):
     def sqrt(self, x: Any) -> Any:
         return self.jnp.sqrt(x)
     
+    def log(self, x: Any) -> Any:
+        return self.jnp.log(x)
+    
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         return self.jnp.cumsum(x, axis=axis)
     
@@ -83,6 +94,9 @@ class JAXBackend(Backend):
     
     def grad(self, fn: callable) -> callable:
         return self.grad_fn(fn)
+    
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
+        return arr.at[idx].set(val)
 
 
 class TorchBackend(Backend):
@@ -117,6 +131,11 @@ class TorchBackend(Backend):
             x = self.array(x)
         return self.torch.sqrt(x)
     
+    def log(self, x: Any) -> Any:
+        if not isinstance(x, self.torch.Tensor):
+            x = self.array(x)
+        return self.torch.log(x)
+    
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         if not isinstance(x, self.torch.Tensor):
             x = self.array(x)
@@ -146,3 +165,7 @@ class TorchBackend(Backend):
             y = fn(x_tensor)
             return self.torch.autograd.grad(y, x_tensor, create_graph=True)[0]
         return grad_fn
+    
+    def set_item(self, arr: Any, idx: Any, val: Any) -> Any:
+        arr[idx] = val
+        return arr

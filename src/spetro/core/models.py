@@ -72,25 +72,24 @@ class RoughBergomi(RoughVolatilityModel):
         if hasattr(V, 'at'):
             V = V.at[0].set(self.xi)
             for i in range(n_steps):
-                vol_term = self.xi * backend.exp(self.eta * Y[i] - 0.5 * self.eta**2 * t_grid[i+1])
+                vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
                 V = V.at[i+1].set(vol_term)
         else:
             V[0] = self.xi
             for i in range(n_steps):
-                vol_term = self.xi * backend.exp(self.eta * Y[i] - 0.5 * self.eta**2 * t_grid[i+1])
+                vol_term = self.xi * backend.exp(self.eta * Y[:, i] - 0.5 * self.eta**2 * t_grid[i+1])
                 V[i+1] = vol_term
         
         log_S = backend.zeros((n_paths, n_steps + 1))
         if hasattr(log_S, 'at'):
-            log_S = log_S.at[:, 0].set(np.log(S0))
+            log_S = log_S.at[:, 0].set(backend.log(S0))
         else:
-            log_S[:, 0] = np.log(S0)
+            log_S[:, 0] = backend.log(S0)
         
         for i in range(n_steps):
             vol = backend.sqrt(V[i])
             drift = (self.r - 0.5 * V[i]) * dt
             diffusion = vol * dB[:, i]
-            
             if hasattr(log_S, 'at'):
                 log_S = log_S.at[:, i + 1].set(log_S[:, i] + drift + diffusion)
             else:
@@ -110,28 +109,24 @@ class RoughBergomi(RoughVolatilityModel):
         n_paths, n_steps = dW.shape
         dt = t_grid[1] - t_grid[0]
         
-        g_kernel = self._riemann_liouville_kernel(backend, t_grid[1:], H)
+        g = self._riemann_liouville_kernel(backend, t_grid[1:], H)
         
-        Y = backend.zeros((n_steps, n_paths))
-        
-        for i in range(n_steps):
-            if i == 0:
-                weights = backend.array([g_kernel[0]])
-                dW_slice = dW[:, :1]
-            else:
-                weights = g_kernel[:i+1]
-                if hasattr(backend, 'jnp'):
-                    weights = weights[::-1]
-                else:
-                    weights = backend.torch.flip(weights, dims=[0])
-                dW_slice = dW[:, :i+1]
-            
-            if hasattr(backend, 'jnp'):
-                Y = Y.at[i].set(backend.jnp.dot(weights, dW_slice.T))
-            else:
-                Y[i] = backend.torch.matmul(weights.unsqueeze(0), dW_slice.T).squeeze()
-        
-        return Y
+        if hasattr(backend, 'jnp'):
+            g_rev = g[::-1]
+            y = backend.jnp.array([backend.jnp.convolve(dW[p], g_rev, mode='valid') 
+                                  for p in range(n_paths)])
+            return y
+        else:
+            g_rev = backend.torch.flip(g, dims=[0])
+            y = backend.zeros((n_paths, n_steps))
+            for p in range(n_paths):
+                conv = backend.torch.conv1d(
+                    dW[p:p+1].unsqueeze(0), 
+                    g_rev.unsqueeze(0).unsqueeze(0), 
+                    padding=n_steps-1
+                )
+                y[p] = conv.squeeze()[:n_steps]
+            return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
         alpha = H + 0.5
@@ -202,29 +197,23 @@ class RoughHeston(RoughVolatilityModel):
         V = backend.zeros((n_paths, n_steps + 1))
         S = backend.zeros((n_paths, n_steps + 1))
         
-        if hasattr(V, 'at'):
-            V = V.at[:, 0].set(self.V0)
-            S = S.at[:, 0].set(S0)
-        else:
-            V[:, 0] = self.V0
-            S[:, 0] = S0
+        V = backend.set_item(V, (slice(None), 0), backend.array([self.V0] * n_paths))
+        S = backend.set_item(S, (slice(None), 0), backend.array([S0] * n_paths))
         
         for i in range(n_steps):
-            vol_of_vol = self.nu * (V[:, i] ** 0.5)
+            v_curr = V[:, i]
+            v_sqrt = backend.sqrt(backend.array([max(v, 1e-8) for v in v_curr.flatten()])).reshape(v_curr.shape)
             
-            dV = self.theta * dt + vol_of_vol * dZ[:, i]
+            dv = self.theta * dt + self.nu * v_sqrt * dZ[:, i]
+            v_next = v_curr + dv
+            v_next = backend.array([max(v, 0.0) for v in v_next.flatten()]).reshape(v_next.shape)
             
-            if hasattr(V, 'at'):
-                V = V.at[:, i + 1].set(backend.jnp.maximum(V[:, i] + dV, 0.0))
-            else:
-                V[:, i + 1] = backend.torch.clamp(V[:, i] + dV, min=0.0)
+            V = backend.set_item(V, (slice(None), i + 1), v_next)
             
             drift = self.r * dt
-            diffusion = backend.sqrt(V[:, i]) * dB[:, i]
+            diffusion = v_sqrt * dB[:, i]
+            s_next = S[:, i] * backend.exp(drift - 0.5 * v_curr * dt + diffusion)
             
-            if hasattr(S, 'at'):
-                S = S.at[:, i + 1].set(S[:, i] * backend.exp(drift - 0.5 * V[:, i] * dt + diffusion))
-            else:
-                S[:, i + 1] = S[:, i] * backend.exp(drift - 0.5 * V[:, i] * dt + diffusion)
+            S = backend.set_item(S, (slice(None), i + 1), s_next)
         
         return S, V
