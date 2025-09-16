@@ -26,12 +26,25 @@ def european_call(K: float) -> Callable[[Any], Any]:
 
 
 def european_put(K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    
     def payoff(S: Any) -> Any:
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(K - S[:, -1], 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(K - S[:, -1], min=0.0)
+            if isinstance(S, torch.Tensor):
+                return torch.clamp(K - S[:, -1], min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                return jnp.maximum(K - S[:, -1], 0.0)
+        except ImportError:
+            pass
+        
+        return np.maximum(K - S[:, -1], 0.0)
     return payoff
 
 
