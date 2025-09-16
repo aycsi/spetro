@@ -131,6 +131,11 @@ class TorchBackend(Backend):
             x = self.array(x)
         return self.torch.sqrt(x)
     
+    def log(self, x: Any) -> Any:
+        if not isinstance(x, self.torch.Tensor):
+            x = self.array(x)
+        return self.torch.log(x)
+    
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         if not isinstance(x, self.torch.Tensor):
             x = self.array(x)
