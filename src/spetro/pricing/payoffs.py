@@ -105,16 +105,29 @@ def barrier_call(K: float, barrier: float, barrier_type: str = "up_and_out") -> 
 
 
 def basket_call(weights: list, K: float) -> Callable[[Any], Any]:
+    if K <= 0:
+        raise ValueError(f"strike K must be positive, got {K}")
+    if not weights:
+        raise ValueError("weights cannot be empty")
+    
     def payoff(S: Any) -> Any:
-        if len(S.shape) == 3:
-            basket_value = sum(w * S[i, :, -1] for i, w in enumerate(weights))
-        else:
-            basket_value = sum(w * S[:, -1] for w in weights)
-        
-        if hasattr(S, 'jnp') or hasattr(S, '__array__'):
-            return np.maximum(basket_value - K, 0.0)
-        else:
+        try:
             import torch
-            return torch.clamp(basket_value - K, min=0.0)
+            if isinstance(S, torch.Tensor):
+                basket_value = sum(w * S[:, -1] for w in weights)
+                return torch.clamp(basket_value - K, min=0.0)
+        except ImportError:
+            pass
+        
+        try:
+            import jax.numpy as jnp
+            if hasattr(S, 'shape') and hasattr(S, 'dtype'):
+                basket_value = sum(w * S[:, -1] for w in weights)
+                return jnp.maximum(basket_value - K, 0.0)
+        except ImportError:
+            pass
+        
+        basket_value = sum(w * S[:, -1] for w in weights)
+        return np.maximum(basket_value - K, 0.0)
     
     return payoff
