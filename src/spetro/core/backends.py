@@ -80,6 +80,9 @@ class JAXBackend(Backend):
     def sqrt(self, x: Any) -> Any:
         return self.jnp.sqrt(x)
     
+    def log(self, x: Any) -> Any:
+        return self.jnp.log(x)
+    
     def cumsum(self, x: Any, axis: int = -1) -> Any:
         return self.jnp.cumsum(x, axis=axis)
     
