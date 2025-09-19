@@ -4,4 +4,8 @@ from .calibration import *
 from .neural import *
 
 __version__ = "0.0.6"
-__all__ = ["RoughVolatilityEngine", "Pricer", "Calibrator", "NeuralSurrogate"]
+__all__ = [
+    "RoughVolatilityEngine", "RoughBergomi", "RoughHeston",
+    "JAXBackend", "TorchBackend", "EulerScheme", "HybridScheme",
+    "Pricer", "Calibrator", "NeuralSurrogate"
+]
