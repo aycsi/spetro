@@ -13,5 +13,7 @@ pytest.ini
 Thumbs.db
 venv/
 .env
-
+.coverage
+htmlcov/
+.benchmarks/
 
