@@ -25,9 +25,9 @@ class TestIntegration:
             greeks = pricer.greeks(
                 model=model,
                 option_type="call",
-                K=100,
+                K=100.0,
                 T=0.25,
-                S0=100,
+                S0=100.0,
                 n_paths=10000
             )
             
