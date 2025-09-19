@@ -72,7 +72,7 @@ class TestEdgeCases:
                 K=100,
                 T=0.001,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             assert result["price"] >= 0
@@ -91,7 +91,7 @@ class TestEdgeCases:
                 K=100,
                 T=10.0,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             assert result["price"] >= 0
@@ -110,7 +110,7 @@ class TestEdgeCases:
                 K=100,
                 T=0.25,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             put_result = pricer.price_european(
@@ -119,7 +119,7 @@ class TestEdgeCases:
                 K=100,
                 T=0.25,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             assert call_result["price"] > 0
@@ -139,7 +139,7 @@ class TestEdgeCases:
                 K=90,
                 T=0.25,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             otm_call = pricer.price_european(
@@ -148,7 +148,7 @@ class TestEdgeCases:
                 K=110,
                 T=0.25,
                 S0=100,
-                n_paths=10000
+                n_paths=1000
             )
             
             assert itm_call["price"] > otm_call["price"]

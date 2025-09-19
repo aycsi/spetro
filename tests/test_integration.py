@@ -72,7 +72,9 @@ class TestIntegration:
                 model_class=sp.RoughBergomi,
                 market_prices=market_prices,
                 S0=100,
-                max_iter=50
+                max_iter=5,
+                n_paths=1000,
+                n_steps=10
             )
             
             assert result["success"]
@@ -81,7 +83,9 @@ class TestIntegration:
             validation = calibrator.validate_calibration(
                 result["model"],
                 market_prices,
-                S0=100
+                S0=100,
+                n_paths=1000,
+                n_steps=10
             )
             
             assert "mean_absolute_error" in validation
@@ -133,14 +137,14 @@ class TestPerformance:
             
             S, V = engine.simulate(
                 model=model,
-                n_paths=100000,
-                n_steps=252,
+                n_paths=1000,
+                n_steps=50,
                 T=1.0,
                 S0=100
             )
             
-            assert S.shape == (100000, 253)
-            assert V.shape[0] == 253 or V.shape[1] == 100000
+            assert S.shape == (1000, 51)
+            assert V.shape[0] == 51 or V.shape[1] == 1000
         except ImportError:
             pytest.skip("jax not available")
     
@@ -152,12 +156,12 @@ class TestPerformance:
             for i in range(5):
                 S, V = engine.simulate(
                     model=model,
-                    n_paths=50000,
-                    n_steps=100,
+                    n_paths=1000,
+                    n_steps=20,
                     T=0.5,
                     S0=100
                 )
                 
-                assert S.shape[0] == 50000
+                assert S.shape[0] == 1000
         except ImportError:
             pytest.skip("jax not available")

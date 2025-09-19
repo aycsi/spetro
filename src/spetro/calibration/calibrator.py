@@ -168,20 +168,24 @@ class Calibrator:
         self,
         model: RoughVolatilityModel,
         market_prices: Dict[Tuple[float, float], float],
-        S0: float = 100.0
+        S0: float = 100.0,
+        n_paths: int = 100000,
+        n_steps: Optional[int] = None
     ) -> Dict[str, Any]:
         
         results = {}
         total_error = 0.0
         
         for (K, T), market_price in market_prices.items():
+            steps = n_steps if n_steps is not None else max(50, int(T * 252))
             model_result = self.pricer.price_european(
                 model=model,
                 option_type="call", 
                 K=K,
                 T=T,
                 S0=S0,
-                n_paths=100000
+                n_paths=n_paths,
+                n_steps=steps
             )
             
             model_price = model_result["price"]

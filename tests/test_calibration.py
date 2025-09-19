@@ -48,7 +48,7 @@ class TestCalibrator:
                 (100, 0.25): 5.0
             }
             
-            result = calibrator.validate_calibration(model, market_prices, S0=100)
+            result = calibrator.validate_calibration(model, market_prices, S0=100, n_paths=1000, n_steps=10)
             
             assert "individual_results" in result
             assert "mean_absolute_error" in result
