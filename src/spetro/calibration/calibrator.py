@@ -20,7 +20,9 @@ class Calibrator:
         bounds: Optional[Dict[str, Tuple[float, float]]] = None,
         optimizer: str = "adam",
         max_iter: int = 1000,
-        tolerance: float = 1e-6
+        tolerance: float = 1e-6,
+        n_paths: int = 50000,
+        n_steps: Optional[int] = None
     ) -> Dict[str, Any]:
         
         if initial_params is None:
@@ -53,14 +55,15 @@ class Calibrator:
             
             for (K, T), market_price in market_prices.items():
                 try:
+                    steps = n_steps if n_steps is not None else max(50, int(T * 252))
                     result = self.pricer.price_european(
                         model=model,
                         option_type="call",
                         K=K,
                         T=T,
                         S0=S0,
-                        n_paths=50000,
-                        n_steps=max(50, int(T * 252))
+                        n_paths=n_paths,
+                        n_steps=steps
                     )
                     
                     model_price = result["price"]

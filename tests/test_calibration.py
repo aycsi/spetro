@@ -26,7 +26,9 @@ class TestCalibrator:
                 model_class=sp.RoughBergomi,
                 market_prices=market_prices,
                 S0=100,
-                max_iter=10
+                max_iter=3,
+                n_paths=1000,
+                n_steps=10
             )
             
             assert "model" in result
