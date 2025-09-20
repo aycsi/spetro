@@ -200,12 +200,16 @@ class RoughHeston(RoughVolatilityModel):
         V = backend.set_item(V, (slice(None), 0), backend.array([self.V0] * n_paths))
         S = backend.set_item(S, (slice(None), 0), backend.array([S0] * n_paths))
         
+        t_grid = backend.array([i * dt for i in range(n_steps + 1)])
+        Y = self._fractional_brownian_motion(backend, dZ, t_grid, self.H)
+        
         for i in range(n_steps):
             v_curr = V[:, i]
             v_sqrt = backend.sqrt(backend.array([max(v, 1e-8) for v in v_curr.flatten()])).reshape(v_curr.shape)
             
-            dv = self.theta * dt + self.nu * v_sqrt * dZ[:, i]
-            v_next = v_curr + dv
+            rough_term = self.nu * backend.sqrt(2 * self.H) * Y[:, i] * backend.sqrt(dt)
+            mean_reversion = self.theta * (self.V0 - v_curr) * dt
+            v_next = v_curr + mean_reversion + rough_term
             v_next = backend.array([max(v, 0.0) for v in v_next.flatten()]).reshape(v_next.shape)
             
             V = backend.set_item(V, (slice(None), i + 1), v_next)

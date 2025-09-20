@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spetro"
-version = "0.0.5"  # <- hard-coded version
+version = "0.1.0"   
 description = "Rough volatility models with automatic differentiation."
 authors = [{name = "aycsi"}]
 license = {text = "MIT"}
@@ -52,6 +52,7 @@ all = [
 dev = [
     "pytest>=7.0",
     "pytest-benchmark>=4.0",
+    "pytest-cov>=4.0",
     "black>=23.0",
     "isort>=5.0",
     "mypy>=1.0",
@@ -63,8 +64,10 @@ examples = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/aycsi/spetro"
 Repository = "https://github.com/aycsi/spetro"
+
+[project.scripts]
+spetro = "spetro.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

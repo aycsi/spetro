@@ -100,13 +100,12 @@ class RoughVolatilityEngine:
             S, _ = model.simulate(self.backend, n_paths, n_steps, T, s0, key)
             return self.backend.mean(payoff_fn(S))
         
+        grad_fn = self.backend.grad(price_fn)
         price = price_fn(S0)
-        delta = self.backend.grad(price_fn)(S0)
+        delta = grad_fn(S0)
         
-        def delta_fn(s0):
-            return self.backend.grad(price_fn)(s0)
-        
-        gamma = self.backend.grad(delta_fn)(S0)
+        grad2_fn = self.backend.grad(grad_fn)
+        gamma = grad2_fn(S0)
         
         return {
             "price": float(price),
