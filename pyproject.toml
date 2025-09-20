@@ -64,7 +64,6 @@ examples = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/aycsi/spetro"
 Repository = "https://github.com/aycsi/spetro"
 
 [project.scripts]
