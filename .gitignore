@@ -16,4 +16,5 @@ venv/
 .coverage
 htmlcov/
 .benchmarks/
+spam2/
 
