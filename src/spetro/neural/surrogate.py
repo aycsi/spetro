@@ -30,13 +30,18 @@ class NeuralSurrogate:
         self.optax = optax
         
         class PricingMLP(nn.Module):
-            features: List[int] = [64, 128, 64, 32]
+            features: List[int] = None
+            
+            def setup(self):
+                if self.features is None:
+                    self.features = [64, 128, 64, 32]
             
             @nn.compact
             def __call__(self, x):
-                for i, feat in enumerate(self.features):
+                features = self.features if self.features is not None else [64, 128, 64, 32]
+                for i, feat in enumerate(features):
                     x = nn.Dense(feat)(x)
-                    if i < len(self.features) - 1:
+                    if i < len(features) - 1:
                         x = nn.relu(x)
                 x = nn.Dense(1)(x)
                 return x.squeeze()
@@ -53,8 +58,10 @@ class NeuralSurrogate:
         self.optim = optim
         
         class PricingMLP(nn.Module):
-            def __init__(self, input_dim: int, hidden_dims: List[int] = [64, 128, 64, 32]):
+            def __init__(self, input_dim: int, hidden_dims: List[int] = None):
                 super().__init__()
+                if hidden_dims is None:
+                    hidden_dims = [64, 128, 64, 32]
                 layers = []
                 prev_dim = input_dim
                 
