@@ -33,7 +33,7 @@ pytest -k "torch"
 # Run tests with coverage
 pytest --cov=spetro
 
-# Run tests with cov report
+# Run with report
 pip install pytest-cov
 pytest --cov=spetro --cov-report=html
 ```

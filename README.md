@@ -6,6 +6,7 @@
 [![api](https://img.shields.io/badge/docs-api-purple)](docs/api.md)
 [![Downloads](https://pepy.tech/badge/spetro)](https://pepy.tech/project/spetro)
 
+
 ### installation
 
 ```bash
