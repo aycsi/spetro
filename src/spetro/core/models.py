@@ -120,14 +120,10 @@ class RoughBergomi(RoughVolatilityModel):
             return y
         else:
             g_rev = backend.torch.flip(g, dims=[0])
-            y = backend.zeros((n_paths, n_steps))
-            for p in range(n_paths):
-                conv = backend.torch.conv1d(
-                    dW[p:p+1].unsqueeze(0), 
-                    g_rev.unsqueeze(0).unsqueeze(0), 
-                    padding=n_steps-1
-                )
-                y[p] = conv.squeeze()[:n_steps]
+            dW_batched = dW.unsqueeze(1)
+            kernel_batched = g_rev.unsqueeze(0).unsqueeze(0).unsqueeze(0)
+            conv = backend.torch.conv1d(dW_batched, kernel_batched, padding=n_steps-1, groups=n_paths)
+            y = conv.squeeze(1)[:, :n_steps]
             return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
