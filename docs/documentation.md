@@ -1,4 +1,8 @@
-# Mathematics
+# Documentation
+
+## API Reference
+
+Please see docs/api.md for this section .
 
 ## RoughBergomi
 

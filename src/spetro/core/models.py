@@ -14,7 +14,8 @@ class RoughVolatilityModel(ABC):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         pass
 
@@ -44,7 +45,8 @@ class RoughBergomi(RoughVolatilityModel):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         dt = T / n_steps
         
@@ -61,6 +63,10 @@ class RoughBergomi(RoughVolatilityModel):
         
         dW1 = backend.random_normal(k1, (n_paths, n_steps)) * backend.sqrt(dt)
         dW2 = backend.random_normal(k2, (n_paths, n_steps)) * backend.sqrt(dt)
+        
+        if antithetic:
+            dW1 = -dW1
+            dW2 = -dW2
         
         dB = self.rho * dW1 + backend.sqrt(1 - self.rho**2) * dW2
         
@@ -170,7 +176,8 @@ class RoughHeston(RoughVolatilityModel):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         dt = T / n_steps
         
@@ -189,6 +196,11 @@ class RoughHeston(RoughVolatilityModel):
         dW1 = backend.random_normal(k1, (n_paths, n_steps)) * backend.sqrt(dt)
         dW2 = backend.random_normal(k2, (n_paths, n_steps)) * backend.sqrt(dt)
         dZ = backend.random_normal(k3, (n_paths, n_steps)) * backend.sqrt(dt)
+        
+        if antithetic:
+            dW1 = -dW1
+            dW2 = -dW2
+            dZ = -dZ
         
         dB = self.rho * dW1 + backend.sqrt(1 - self.rho**2) * dW2
         
@@ -225,3 +237,46 @@ class RoughHeston(RoughVolatilityModel):
             S = backend.set_item(S, (slice(None), i + 1), s_next)
         
         return S, V
+    
+    def _fractional_brownian_motion(
+        self, 
+        backend: Backend, 
+        dW: Any, 
+        t_grid: Any, 
+        H: float
+    ) -> Any:
+        n_paths, n_steps = dW.shape
+        dt = t_grid[1] - t_grid[0]
+        
+        g = self._riemann_liouville_kernel(backend, t_grid[1:], H)
+        
+        if hasattr(backend, 'jnp'):
+            g_rev = g[::-1]
+            from jax import vmap
+            def conv_path(path):
+                return backend.jnp.convolve(path, g_rev, mode='valid')
+            y = vmap(conv_path)(dW)
+            return y
+        else:
+            g_rev = backend.torch.flip(g, dims=[0])
+            dW_batched = dW.unsqueeze(1)
+            kernel_batched = g_rev.unsqueeze(0).unsqueeze(0).unsqueeze(0)
+            conv = backend.torch.conv1d(dW_batched, kernel_batched, padding=n_steps-1, groups=n_paths)
+            y = conv.squeeze(1)[:, :n_steps]
+            return y
+    
+    def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
+        alpha = H + 0.5
+        
+        def gamma_func(x):
+            if hasattr(backend, 'jax'):
+                from jax.scipy.special import gamma
+                return gamma(x)
+            else:
+                return backend.torch.exp(backend.torch.lgamma(backend.array(x)))
+        
+        normalization = backend.sqrt(2 * H * gamma_func(1.5 - H) / gamma_func(H + 0.5))
+        
+        kernel = normalization * (t ** (H - 0.5))
+        
+        return kernel
