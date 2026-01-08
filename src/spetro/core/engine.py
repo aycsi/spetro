@@ -71,7 +71,7 @@ class RoughVolatilityEngine:
     ) -> Dict[str, float]:
         if antithetic and n_paths % 2 == 0:
             n_half = n_paths // 2
-            S1, _ = self.simulate(model, n_half, n_steps, T, S0, key)
+            S1, _ = model.simulate(self.backend, n_half, n_steps, T, S0, key, antithetic=False)
             S2, _ = model.simulate(self.backend, n_half, n_steps, T, S0, key, antithetic=True)
             if hasattr(self.backend, 'jnp'):
                 S = self.backend.jnp.concatenate([S1, S2], axis=0)
