@@ -72,11 +72,7 @@ class RoughVolatilityEngine:
         if antithetic and n_paths % 2 == 0:
             n_half = n_paths // 2
             S1, _ = self.simulate(model, n_half, n_steps, T, S0, key)
-            if key is not None and hasattr(self.backend, 'random') and hasattr(self.backend.random, 'split'):
-                key_anti, _ = self.backend.random.split(key)
-            else:
-                key_anti = key
-            S2, _ = self.simulate(model, n_half, n_steps, T, S0, key_anti)
+            S2, _ = model.simulate(self.backend, n_half, n_steps, T, S0, key, antithetic=True)
             if hasattr(self.backend, 'jnp'):
                 S = self.backend.jnp.concatenate([S1, S2], axis=0)
             else:
