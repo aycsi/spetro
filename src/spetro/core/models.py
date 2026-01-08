@@ -133,8 +133,6 @@ class RoughBergomi(RoughVolatilityModel):
             return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
-        alpha = H + 0.5
-        
         def gamma_func(x):
             if hasattr(backend, 'jax'):
                 from jax.scipy.special import gamma
@@ -266,8 +264,6 @@ class RoughHeston(RoughVolatilityModel):
             return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
-        alpha = H + 0.5
-        
         def gamma_func(x):
             if hasattr(backend, 'jax'):
                 from jax.scipy.special import gamma
