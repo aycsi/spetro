@@ -75,7 +75,7 @@ class MonteCarloPricer:
                 control_centered = control_payoffs - control_mean
                 cov = self.engine.backend.mean(main_centered * control_centered)
                 var_control = self.engine.backend.mean(control_centered ** 2)
-                beta = cov / var_control
+                beta = cov / (var_control + 1e-10)
             else:
                 control_mean = self.engine.backend.mean(control_payoffs)
             
