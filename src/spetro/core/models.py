@@ -203,7 +203,10 @@ class RoughHeston(RoughVolatilityModel):
         
         for i in range(n_steps):
             v_curr = V[:, i]
-            v_sqrt = backend.sqrt(backend.array([max(v, 1e-8) for v in v_curr.flatten()])).reshape(v_curr.shape)
+            if hasattr(backend, 'jnp'):
+                v_sqrt = backend.sqrt(backend.jnp.maximum(v_curr, backend.array(1e-8)))
+            else:
+                v_sqrt = backend.sqrt(backend.torch.clamp(v_curr, min=1e-8))
             
             rough_term = self.nu * backend.sqrt(2 * self.H) * Y[:, i] * backend.sqrt(dt)
             mean_reversion = self.theta * (self.V0 - v_curr) * dt
