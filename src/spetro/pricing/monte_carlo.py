@@ -25,6 +25,9 @@ class MonteCarloPricer:
         if correlations is None:
             correlations = np.eye(n_assets)
         
+        if correlations.shape != (n_assets, n_assets):
+            raise ValueError(f"correlations must be {n_assets}x{n_assets} matrix")
+        
         portfolio_value = 0.0
         individual_prices = []
         
