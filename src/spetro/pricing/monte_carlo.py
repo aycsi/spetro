@@ -28,33 +28,11 @@ class MonteCarloPricer:
         if correlations.shape != (n_assets, n_assets):
             raise ValueError(f"correlations must be {n_assets}x{n_assets} matrix")
         
-        L = np.linalg.cholesky(correlations)
+        if not np.allclose(correlations, correlations.T):
+            raise ValueError("correlation matrix must be symmetric")
         
-        if hasattr(self.engine.backend, 'random') and hasattr(self.engine.backend.random, 'PRNGKey'):
-            key = self.engine.backend.random.PRNGKey(42)
-            keys = self.engine.backend.random.split(key, n_assets)
-        else:
-            keys = [42 + i for i in range(n_assets)]
-        
-        dt = T / n_steps
-        
-        if hasattr(self.engine.backend, 'random') and hasattr(self.engine.backend.random, 'PRNGKey'):
-            base_key = self.engine.backend.random.PRNGKey(42)
-            uncorr_dW = self.engine.backend.random.normal(
-                self.engine.backend.random.split(base_key, n_paths * n_steps),
-                (n_paths, n_steps, n_assets)
-            )
-        else:
-            np.random.seed(42)
-            uncorr_dW = np.random.randn(n_paths, n_steps, n_assets)
-            uncorr_dW = self.engine.backend.array(uncorr_dW)
-        
-        if hasattr(self.engine.backend, 'jnp'):
-            L_backend = self.engine.backend.jnp.array(L)
-            corr_dW = self.engine.backend.jnp.einsum('ijk,jl->ilk', uncorr_dW, L_backend)
-        else:
-            L_backend = self.engine.backend.torch.tensor(L, dtype=self.engine.backend.torch.float32)
-            corr_dW = self.engine.backend.torch.einsum('ijk,jl->ilk', uncorr_dW, L_backend)
+        if np.any(np.linalg.eigvals(correlations) < 0):
+            raise ValueError("correlation matrix must be positive semi-definite")
         
         portfolio_value = 0.0
         individual_prices = []
@@ -66,8 +44,7 @@ class MonteCarloPricer:
                 n_paths=n_paths,
                 n_steps=n_steps,
                 T=T,
-                S0=s0,
-                key=keys[i]
+                S0=s0
             )
             
             individual_prices.append(result)
