@@ -43,6 +43,8 @@ class Calibrator:
                 bounds = {k: (v * 0.1, v * 10) for k, v in initial_params.items()}
         
         def objective(params_array):
+            if hasattr(params_array, '__array__') and not isinstance(params_array, np.ndarray):
+                params_array = np.array(params_array)
             params_dict = dict(zip(initial_params.keys(), params_array))
             
             try:
