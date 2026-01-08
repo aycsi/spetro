@@ -28,6 +28,14 @@ class MonteCarloPricer:
         if correlations.shape != (n_assets, n_assets):
             raise ValueError(f"correlations must be {n_assets}x{n_assets} matrix")
         
+        L = np.linalg.cholesky(correlations)
+        
+        if hasattr(self.engine.backend, 'random') and hasattr(self.engine.backend.random, 'PRNGKey'):
+            key = self.engine.backend.random.PRNGKey(42)
+            keys = self.engine.backend.random.split(key, n_assets)
+        else:
+            keys = [42 + i for i in range(n_assets)]
+        
         portfolio_value = 0.0
         individual_prices = []
         
