@@ -113,8 +113,10 @@ class RoughBergomi(RoughVolatilityModel):
         
         if hasattr(backend, 'jnp'):
             g_rev = g[::-1]
-            y = backend.jnp.array([backend.jnp.convolve(dW[p], g_rev, mode='valid') 
-                                  for p in range(n_paths)])
+            from jax import vmap
+            def conv_path(path):
+                return backend.jnp.convolve(path, g_rev, mode='valid')
+            y = vmap(conv_path)(dW)
             return y
         else:
             g_rev = backend.torch.flip(g, dims=[0])
