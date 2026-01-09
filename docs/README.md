@@ -1,5 +1,4 @@
-# spetro docs
+# Docs
 
-[![mathematics](https://img.shields.io/badge/docs-mathematics-blue)](mathematics.md)
-[![api](https://img.shields.io/badge/docs-api-purple)](api.md)
-[![thoughts](https://img.shields.io/badge/docs-thoughts-green)](thoughts.md)
+[![Documentation](https://img.shields.io/badge/Documentation-blue)](documentation.md)
+[![API](https://img.shields.io/badge/API-purple)](api.md)

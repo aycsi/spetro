@@ -1,10 +1,10 @@
 ## Spetro
 
 [![PyPI](https://img.shields.io/pypi/v/spetro.svg)](https://pypi.org/project/spetro/)
-[![thoughts](https://img.shields.io/badge/docs-thoughts-blue)](docs/thoughts.md)
-![Development Status](https://img.shields.io/badge/dev--status-beta-yellow)
-[![api](https://img.shields.io/badge/docs-api-purple)](docs/api.md)
+![Development Status](https://img.shields.io/badge/Development--Status-beta-yellow)
+[![api](https://img.shields.io/badge/API--Reference-API-purple)](docs/api.md)
 [![Downloads](https://pepy.tech/badge/spetro)](https://pepy.tech/project/spetro)
+[![<Workflow Name>](https://github.com/aycsi/spetro/actions/workflows/publish.yml/badge.svg)](https://github.com/aycsi/spetro/actions/workflows/publish.yml)
 
 
 ### installation
@@ -12,18 +12,4 @@
 ```bash
 pip install spetro
 ```
-
-<details>
-<summary>Testings</summary>
-  
-![performance](docs/testings-figure-b.png)
-
-</details>
-
-<details>
-<summary>Architecture</summary>
-  
-![schema](docs/schema-thoughts-figure-a.png)
-
-</details>
 

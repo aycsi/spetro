@@ -43,6 +43,8 @@ class Calibrator:
                 bounds = {k: (v * 0.1, v * 10) for k, v in initial_params.items()}
         
         def objective(params_array):
+            if hasattr(params_array, '__array__') and not isinstance(params_array, np.ndarray):
+                params_array = np.array(params_array)
             params_dict = dict(zip(initial_params.keys(), params_array))
             
             try:
@@ -126,7 +128,10 @@ class Calibrator:
                 best_f = f_current
                 best_x = x.copy()
             
-            grad = self._numerical_gradient(objective, x)
+            if hasattr(self.engine.backend, 'grad'):
+                grad = self._autodiff_gradient(objective, x)
+            else:
+                grad = self._numerical_gradient(objective, x)
             
             m = beta1 * m + (1 - beta1) * grad
             v = beta2 * v + (1 - beta2) * (grad ** 2)
@@ -150,6 +155,12 @@ class Calibrator:
             "nit": t,
             "success": best_f < 1e3
         }
+    
+    def _autodiff_gradient(self, f: Callable, x: np.ndarray) -> np.ndarray:
+        x_backend = self.engine.backend.array(x)
+        grad_fn = self.engine.backend.grad(f)
+        grad_backend = grad_fn(x_backend)
+        return np.array(grad_backend)
     
     def _numerical_gradient(self, f: Callable, x: np.ndarray, h: float = 1e-5) -> np.ndarray:
         grad = np.zeros_like(x)
