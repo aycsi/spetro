@@ -34,8 +34,7 @@ class MonteCarloPricer:
                 raise ValueError("correlation matrix must be positive semi-definite")
             if not np.allclose(np.diag(correlations), 1.0):
                 raise ValueError("correlation matrix diagonal must be 1.0")
-            import warnings
-            warnings.warn("Portfolio correlations are validated but not yet applied in simulations. Assets are priced independently.", UserWarning)
+            raise NotImplementedError("Portfolio correlations are not yet implemented. Models generate independent random numbers internally. Use correlations=None for independent pricing.")
         
         portfolio_value = 0.0
         individual_prices = []
