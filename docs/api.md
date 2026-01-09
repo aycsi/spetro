@@ -284,26 +284,3 @@ backend = JAXBackend(device=None, precision="float32")
 ### Torch
 ```python
 backend = TorchBackend(device=None, precision="float32")
-
-## Tests
-
-- PyTest:
-
-For PyTest we can write the following tests:
-
-### Core
-pytest test_core.py
-
-### Calibrator
-pytest test_calibration.py
-
-### Pricing
-
-### Pricing
-pytest test_pricing.py
-pytest test_neural.py
-pytest test_integration.py
-pytest test_edge_cases.py
-pytest -k "jax"
-pytest -k "torch"
-
