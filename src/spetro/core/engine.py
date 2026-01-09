@@ -69,12 +69,17 @@ class RoughVolatilityEngine:
         key: Optional[Any] = None,
         antithetic: bool = True
     ) -> Dict[str, float]:
-        S, V = self.simulate(model, n_paths, n_steps, T, S0, key)
-        
         if antithetic and n_paths % 2 == 0:
-            S_anti = 2 * S0 - S
-            payoffs = (payoff_fn(S) + payoff_fn(S_anti)) / 2
+            n_half = n_paths // 2
+            S1, _ = model.simulate(self.backend, n_half, n_steps, T, S0, key, antithetic=False)
+            S2, _ = model.simulate(self.backend, n_half, n_steps, T, S0, key, antithetic=True)
+            if hasattr(self.backend, 'jnp'):
+                S = self.backend.jnp.concatenate([S1, S2], axis=0)
+            else:
+                S = self.backend.torch.cat([S1, S2], dim=0)
+            payoffs = payoff_fn(S)
         else:
+            S, V = self.simulate(model, n_paths, n_steps, T, S0, key)
             payoffs = payoff_fn(S)
         
         price = self.backend.mean(payoffs)

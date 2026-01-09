@@ -14,7 +14,8 @@ class RoughVolatilityModel(ABC):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         pass
 
@@ -44,7 +45,8 @@ class RoughBergomi(RoughVolatilityModel):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         dt = T / n_steps
         
@@ -61,6 +63,10 @@ class RoughBergomi(RoughVolatilityModel):
         
         dW1 = backend.random_normal(k1, (n_paths, n_steps)) * backend.sqrt(dt)
         dW2 = backend.random_normal(k2, (n_paths, n_steps)) * backend.sqrt(dt)
+        
+        if antithetic:
+            dW1 = -dW1
+            dW2 = -dW2
         
         dB = self.rho * dW1 + backend.sqrt(1 - self.rho**2) * dW2
         
@@ -113,24 +119,20 @@ class RoughBergomi(RoughVolatilityModel):
         
         if hasattr(backend, 'jnp'):
             g_rev = g[::-1]
-            y = backend.jnp.array([backend.jnp.convolve(dW[p], g_rev, mode='valid') 
-                                  for p in range(n_paths)])
+            from jax import vmap
+            def conv_path(path):
+                return backend.jnp.convolve(path, g_rev, mode='valid')
+            y = vmap(conv_path)(dW)
             return y
         else:
             g_rev = backend.torch.flip(g, dims=[0])
-            y = backend.zeros((n_paths, n_steps))
-            for p in range(n_paths):
-                conv = backend.torch.conv1d(
-                    dW[p:p+1].unsqueeze(0), 
-                    g_rev.unsqueeze(0).unsqueeze(0), 
-                    padding=n_steps-1
-                )
-                y[p] = conv.squeeze()[:n_steps]
+            dW_batched = dW.unsqueeze(1)
+            kernel_batched = g_rev.unsqueeze(0).unsqueeze(0).unsqueeze(0)
+            conv = backend.torch.conv1d(dW_batched, kernel_batched, padding=n_steps-1, groups=n_paths)
+            y = conv.squeeze(1)[:, :n_steps]
             return y
     
     def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
-        alpha = H + 0.5
-        
         def gamma_func(x):
             if hasattr(backend, 'jax'):
                 from jax.scipy.special import gamma
@@ -172,7 +174,8 @@ class RoughHeston(RoughVolatilityModel):
         n_steps: int,
         T: float,
         S0: float,
-        key: Optional[Any] = None
+        key: Optional[Any] = None,
+        antithetic: bool = False
     ) -> Tuple[Any, Any]:
         dt = T / n_steps
         
@@ -192,6 +195,11 @@ class RoughHeston(RoughVolatilityModel):
         dW2 = backend.random_normal(k2, (n_paths, n_steps)) * backend.sqrt(dt)
         dZ = backend.random_normal(k3, (n_paths, n_steps)) * backend.sqrt(dt)
         
+        if antithetic:
+            dW1 = -dW1
+            dW2 = -dW2
+            dZ = -dZ
+        
         dB = self.rho * dW1 + backend.sqrt(1 - self.rho**2) * dW2
         
         V = backend.zeros((n_paths, n_steps + 1))
@@ -205,12 +213,18 @@ class RoughHeston(RoughVolatilityModel):
         
         for i in range(n_steps):
             v_curr = V[:, i]
-            v_sqrt = backend.sqrt(backend.array([max(v, 1e-8) for v in v_curr.flatten()])).reshape(v_curr.shape)
+            if hasattr(backend, 'jnp'):
+                v_sqrt = backend.sqrt(backend.jnp.maximum(v_curr, backend.array(1e-8)))
+            else:
+                v_sqrt = backend.sqrt(backend.torch.clamp(v_curr, min=1e-8))
             
             rough_term = self.nu * backend.sqrt(2 * self.H) * Y[:, i] * backend.sqrt(dt)
             mean_reversion = self.theta * (self.V0 - v_curr) * dt
             v_next = v_curr + mean_reversion + rough_term
-            v_next = backend.array([max(v, 0.0) for v in v_next.flatten()]).reshape(v_next.shape)
+            if hasattr(backend, 'jnp'):
+                v_next = backend.jnp.maximum(v_next, backend.array(0.0))
+            else:
+                v_next = backend.torch.clamp(v_next, min=0.0)
             
             V = backend.set_item(V, (slice(None), i + 1), v_next)
             
@@ -221,3 +235,44 @@ class RoughHeston(RoughVolatilityModel):
             S = backend.set_item(S, (slice(None), i + 1), s_next)
         
         return S, V
+    
+    def _fractional_brownian_motion(
+        self, 
+        backend: Backend, 
+        dW: Any, 
+        t_grid: Any, 
+        H: float
+    ) -> Any:
+        n_paths, n_steps = dW.shape
+        dt = t_grid[1] - t_grid[0]
+        
+        g = self._riemann_liouville_kernel(backend, t_grid[1:], H)
+        
+        if hasattr(backend, 'jnp'):
+            g_rev = g[::-1]
+            from jax import vmap
+            def conv_path(path):
+                return backend.jnp.convolve(path, g_rev, mode='valid')
+            y = vmap(conv_path)(dW)
+            return y
+        else:
+            g_rev = backend.torch.flip(g, dims=[0])
+            dW_batched = dW.unsqueeze(1)
+            kernel_batched = g_rev.unsqueeze(0).unsqueeze(0).unsqueeze(0)
+            conv = backend.torch.conv1d(dW_batched, kernel_batched, padding=n_steps-1, groups=n_paths)
+            y = conv.squeeze(1)[:, :n_steps]
+            return y
+    
+    def _riemann_liouville_kernel(self, backend: Backend, t: Any, H: float) -> Any:
+        def gamma_func(x):
+            if hasattr(backend, 'jax'):
+                from jax.scipy.special import gamma
+                return gamma(x)
+            else:
+                return backend.torch.exp(backend.torch.lgamma(backend.array(x)))
+        
+        normalization = backend.sqrt(2 * H * gamma_func(1.5 - H) / gamma_func(H + 0.5))
+        
+        kernel = normalization * (t ** (H - 0.5))
+        
+        return kernel

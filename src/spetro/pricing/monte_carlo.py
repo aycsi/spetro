@@ -25,6 +25,17 @@ class MonteCarloPricer:
         if correlations is None:
             correlations = np.eye(n_assets)
         
+        if correlations is not None:
+            if correlations.shape != (n_assets, n_assets):
+                raise ValueError(f"correlations must be {n_assets}x{n_assets} matrix")
+            if not np.allclose(correlations, correlations.T):
+                raise ValueError("correlation matrix must be symmetric")
+            if np.any(np.linalg.eigvals(correlations) < 0):
+                raise ValueError("correlation matrix must be positive semi-definite")
+            if not np.allclose(np.diag(correlations), 1.0):
+                raise ValueError("correlation matrix diagonal must be 1.0")
+            raise NotImplementedError("Portfolio correlations are not yet implemented. Models generate independent random numbers internally. Use correlations=None for independent pricing.")
+        
         portfolio_value = 0.0
         individual_prices = []
         
@@ -66,18 +77,16 @@ class MonteCarloPricer:
             control_payoffs = control_variate_fn(S)
             
             if beta is None:
-                cov_matrix = self.engine.backend.array([
-                    [self.engine.backend.mean((main_payoffs - self.engine.backend.mean(main_payoffs))**2),
-                     self.engine.backend.mean((main_payoffs - self.engine.backend.mean(main_payoffs)) * 
-                                            (control_payoffs - self.engine.backend.mean(control_payoffs)))],
-                    [self.engine.backend.mean((main_payoffs - self.engine.backend.mean(main_payoffs)) * 
-                                            (control_payoffs - self.engine.backend.mean(control_payoffs))),
-                     self.engine.backend.mean((control_payoffs - self.engine.backend.mean(control_payoffs))**2)]
-                ])
-                
-                beta = cov_matrix[0, 1] / cov_matrix[1, 1]
+                main_mean = self.engine.backend.mean(main_payoffs)
+                control_mean = self.engine.backend.mean(control_payoffs)
+                main_centered = main_payoffs - main_mean
+                control_centered = control_payoffs - control_mean
+                cov = self.engine.backend.mean(main_centered * control_centered)
+                var_control = self.engine.backend.mean(control_centered ** 2)
+                beta = cov / (var_control + 1e-10)
+            else:
+                control_mean = self.engine.backend.mean(control_payoffs)
             
-            control_mean = self.engine.backend.mean(control_payoffs)
             adjusted_payoffs = main_payoffs - beta * (control_payoffs - control_mean)
             
             price = self.engine.backend.mean(adjusted_payoffs)
