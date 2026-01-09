@@ -7,7 +7,7 @@
 [![<Workflow Name>](https://github.com/aycsi/spetro/actions/workflows/publish.yml/badge.svg)](https://github.com/aycsi/spetro/actions/workflows/publish.yml)
 
 
-### installation
+### Installation
 
 ```bash
 pip install spetro
