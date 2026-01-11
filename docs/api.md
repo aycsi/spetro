@@ -157,6 +157,43 @@ calc greeks
 
 **returns:** dict {price, delta, gamma}
 
+## MonteCarloPricer
+
+```python
+from spetro import MonteCarloPricer
+mp = MonteCarloPricer(engine)
+```
+
+### price_portfolio(models, payoff_fns, weights, T, S0, n_paths=100000, n_steps=252, correlations=None)
+price portfolio
+
+**params:**
+- `models`: list of RoughVolatilityModel
+- `payoff_fns`: list of payoff functions
+- `weights`: list of float, portfolio weights
+- `T`: float, maturity
+- `S0`: list of float, initial prices
+- `n_paths`: int
+- `n_steps`: int
+- `correlations`: numpy array, correlation matrix
+
+**returns:** dict {portfolio_value, individual_prices, weights}
+
+### variance_reduction_price(model, payoff_fn, control_variate_fn, T, S0=100.0, n_paths=100000, n_steps=252, beta=None)
+price with control variate
+
+**params:**
+- `model`: RoughVolatilityModel
+- `payoff_fn`: function(S) -> payoff
+- `control_variate_fn`: function(S) -> control payoff
+- `T`: float, maturity
+- `S0`: float, initial price
+- `n_paths`: int
+- `n_steps`: int
+- `beta`: float, control variate coefficient
+
+**returns:** dict {price, std_error, variance_reduction, paths}
+
 ## Calibrator
 
 ```python
@@ -284,4 +321,3 @@ backend = JAXBackend(device=None, precision="float32")
 ### Torch
 ```python
 backend = TorchBackend(device=None, precision="float32")
-```
