@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Tuple, Optional, Callable
 import numpy as np
 
 from ..core.engine import RoughVolatilityEngine
-from ..core.models import RoughVolatilityModel, RoughBergomi
+from ..core.models import RoughVolatilityModel, RoughBergomi, RoughHeston
 from ..pricing.pricer import Pricer
 
 
@@ -28,6 +28,8 @@ class Calibrator:
         if initial_params is None:
             if model_class == RoughBergomi:
                 initial_params = {"H": 0.07, "eta": 1.9, "rho": -0.9, "xi": 0.235**2}
+            elif model_class == RoughHeston:
+                initial_params = {"H": 0.07, "nu": 0.3, "theta": 0.02, "rho": -0.7, "V0": 0.02}
             else:
                 raise ValueError("initial_params required for custom model")
         
@@ -38,6 +40,14 @@ class Calibrator:
                     "eta": (0.1, 5.0), 
                     "rho": (-0.99, 0.99),
                     "xi": (0.01, 1.0)
+                }
+            elif model_class == RoughHeston:
+                bounds = {
+                    "H": (0.01, 0.49),
+                    "nu": (0.1, 1.0),
+                    "theta": (0.01, 0.1),
+                    "rho": (-0.99, 0.99),
+                    "V0": (0.005, 0.1)
                 }
             else:
                 bounds = {k: (v * 0.1, v * 10) for k, v in initial_params.items()}
