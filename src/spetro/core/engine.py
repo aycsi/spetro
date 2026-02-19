@@ -101,6 +101,7 @@ class RoughVolatilityEngine:
         S0: float = 100.0,
         key: Optional[Any] = None
     ) -> Dict[str, float]:
+        S0 = float(S0)
         def price_fn(s0):
             S, _ = model.simulate(self.backend, n_paths, n_steps, T, s0, key)
             return self.backend.mean(payoff_fn(S))
