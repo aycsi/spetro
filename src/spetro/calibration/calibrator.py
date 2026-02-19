@@ -128,10 +128,8 @@ class Calibrator:
                 best_f = f_current
                 best_x = x.copy()
             
-            if hasattr(self.engine.backend, 'grad'):
-                grad = self._autodiff_gradient(objective, x)
-            else:
-                grad = self._numerical_gradient(objective, x)
+ 
+            grad = self._numerical_gradient(objective, x)
             
             m = beta1 * m + (1 - beta1) * grad
             v = beta2 * v + (1 - beta2) * (grad ** 2)
