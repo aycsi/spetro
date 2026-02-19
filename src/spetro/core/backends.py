@@ -54,15 +54,25 @@ class JAXBackend(Backend):
         import jax
         import jax.numpy as jnp
         from jax import random, grad
-        
+        import warnings
+
         self.jax = jax
         self.jnp = jnp
         self.random = random
         self.grad_fn = grad
-        
+
         if device:
-            self.jax.config.update("jax_default_device", self.jax.devices(device)[0])
-        
+            try:
+                devices = self.jax.devices(device)
+                if devices:
+                    self.jax.config.update("jax_default_device", devices[0])
+            except RuntimeError:
+                warnings.warn(
+                    f"Device '{device}' not available (JAX only sees: {self.jax.devices()}). Using default device.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
         self.dtype = jnp.float32 if precision == "float32" else jnp.float64
     
     def array(self, data: Any) -> Any:
