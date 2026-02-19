@@ -7,5 +7,5 @@ __version__ = "0.1.3"
 __all__ = [
     "RoughVolatilityEngine", "RoughBergomi", "RoughHeston",
     "JAXBackend", "TorchBackend", "EulerScheme", "HybridScheme",
-    "Pricer", "Calibrator", "NeuralSurrogate"
+    "Pricer", "Calibrator", "NeuralSurrogate", "bs_cp", "iv_slv"
 ]
