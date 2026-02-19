@@ -4,6 +4,7 @@ import numpy as np
 from ..core.engine import RoughVolatilityEngine
 from ..core.models import RoughVolatilityModel, RoughBergomi, RoughHeston
 from ..pricing.pricer import Pricer
+from .optimizers import LBFGSOptimizer
 
 
 class Calibrator:
@@ -94,6 +95,14 @@ class Calibrator:
                 objective, 
                 list(initial_params.values()),
                 bounds=list(bounds.values()),
+                max_iter=max_iter,
+                tolerance=tolerance
+            )
+        elif optimizer == "lbfgs":
+            result = LBFGSOptimizer().minimize(
+                objective,
+                list(initial_params.values()),
+                list(bounds.values()),
                 max_iter=max_iter,
                 tolerance=tolerance
             )
